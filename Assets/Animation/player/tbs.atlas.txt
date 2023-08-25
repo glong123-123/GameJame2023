@@ -1,0 +1,16 @@
+tbs.png
+size:691,288
+filter:Linear,Linear
+pma:true
+shent
+bounds:2,2,369,284
+tu
+bounds:580,24,109,76
+offsets:1,1,110,77
+yiubi
+bounds:373,73,124,213
+ytui
+bounds:499,19,79,81
+zuobi
+bounds:499,102,184,185
+rotate:90
