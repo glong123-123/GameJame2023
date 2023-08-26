@@ -20,6 +20,7 @@ public class PlayerController : MonoBehaviour
 
     [SerializeField] public float m_fMoveSpeeds;
     [SerializeField] public float m_fJumpSpeeds;
+    public bool m_bTouchCloud;
 
     private Rigidbody2D m_rigidbody2D;
     private BoxCollider2D m_MyFeet;
@@ -53,11 +54,11 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (m_currentState != CharacterState.start)
-        {
+        //if (m_currentState != CharacterState.start)
+        //{
             Move();
             Filp();
-        }
+        //}
 
         Jump();
         CheckGround();        //检查地板碰撞
@@ -69,7 +70,9 @@ public class PlayerController : MonoBehaviour
     void CheckGround()
     {
         m_IsGround = m_MyFeet.IsTouchingLayers(LayerMask.GetMask("Ground")) ||
-                      m_MyFeet.IsTouchingLayers(LayerMask.GetMask("OneWayPlatform"));
+                      m_MyFeet.IsTouchingLayers(LayerMask.GetMask("OneWayPlatform")) ||
+                       m_bTouchCloud;
+        m_bTouchCloud = false;
     }
 
     //开始播放动画
@@ -107,17 +110,17 @@ public class PlayerController : MonoBehaviour
                 SetAnimation(m_aniReference[1], false, 1);
                 break;
             case CharacterState.highjump:
-                if (m_currentState != CharacterState.start)
-                {
-                    m_pRoll.enabled = true;
-                }
+                //if (m_currentState != CharacterState.start)
+                //{
+                //    m_pRoll.enabled = true;
+                //}
                 SetAnimation(m_aniReference[2], true, 1);
                 break;
             case CharacterState.fly:
                 SetAnimation(m_aniReference[3], true, 1);
                 break;
             case CharacterState.fall:
-                m_pRoll.enabled = false;
+                //m_pRoll.enabled = false;
                 SetAnimation(m_aniReference[4], false, 1);
                 break;
             case CharacterState.end:
@@ -149,11 +152,11 @@ public class PlayerController : MonoBehaviour
     void EnterGame()
     {
         //从左中上转到中间
-        m_MyFeet.enabled = false;
+        //m_MyFeet.enabled = false;
 
-        m_rigidbody2D.velocity = new Vector2(5, m_rigidbody2D.velocity.y);
+        m_rigidbody2D.velocity = new Vector2(0, m_rigidbody2D.velocity.y);
 
-        SetAnimation(m_aniReference[2], true, 1);
+        //SetAnimation(m_aniReference[2], true, 1);
     }
 
     //移动变量
@@ -209,7 +212,8 @@ public class PlayerController : MonoBehaviour
         else if (m_IsGround)
         {
             m_MyFeet.enabled = true;
-            transform.localPosition += new Vector3(0, 4, 0);
+            m_rigidbody2D.velocity = new Vector2(m_rigidbody2D.velocity.x, 0);
+            transform.localPosition += new Vector3(0, 1, 0);
             fall = true;
             fly = false;
 
@@ -217,10 +221,11 @@ public class PlayerController : MonoBehaviour
             StartCoroutine(FallThenJump());
         }
 
-        if (transform.localPosition.y < -13)
+        if (transform.localPosition.y < -13 && m_MyFeet.enabled == false)
         {
             m_MyFeet.enabled = true;
-            transform.localPosition += new Vector3(0, 4, 0);
+            m_rigidbody2D.velocity = new Vector2(m_rigidbody2D.velocity.x, 0);
+            transform.localPosition = new Vector3(transform.localPosition.x, -12, 0);
             SetCharacterState(CharacterState.fall);
         }
     }

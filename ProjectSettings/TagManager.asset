@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Enemy
   - BackGroundCamera
+  - Cloud
   layers:
   - Default
   - TransparentFX
@@ -17,8 +18,8 @@ TagManager:
   - 
   - Ground
   - OneWayPlatform
+  - Cloud
   - Player
-  - 
   - 
   - 
   - 
