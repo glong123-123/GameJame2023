@@ -8,43 +8,44 @@ public class PlayerController : MonoBehaviour
     public enum CharacterState
     {
         idle = 0,
-        run,
         jump,
+        highjump,
+        fly,
         fall,
-        attack,
-        dead,
+        start,
+        end,
     }
     public SkeletonAnimation skeletonAnimation;
-    public AnimationReferenceAsset[] m_aniReference = new AnimationReferenceAsset[5];
+    public AnimationReferenceAsset[] m_aniReference = new AnimationReferenceAsset[6];
 
-    public float m_fMoveSpeed;
-    public float m_fJumpSpeed;
-    public float m_fMovment;
+    [SerializeField] public float m_fMoveSpeeds;
+    [SerializeField] public float m_fJumpSpeeds;
 
     private Rigidbody2D m_rigidbody2D;
     private BoxCollider2D m_MyFeet;
+    private CircleCollider2D m_pRoll;
     private CharacterState m_currentState;
-    private CharacterState m_preState;
     private bool m_IsGround;
-    private bool isOneWayPlatform;
-    public string m_sCurrentAnimation;
+    private string m_sCurrentAnimation;
+    private float m_fFallThenJumpTime = 1f;
+    private float m_fMovments;
 
-    //public bool GiveAttack;
-
+    private bool canJump;
     private bool run;
     private bool jump;
     private bool fall;
+    private bool fly;
     private bool idle;
-    //private bool attack;
-
-
+    private bool end;
+    private bool start;
 
     // Start is called before the first frame update
     void Start()
     {
         m_rigidbody2D = GetComponent<Rigidbody2D>();
         m_MyFeet = GetComponent<BoxCollider2D>();
-        m_currentState = CharacterState.idle;
+        m_pRoll = GetComponent<CircleCollider2D>();
+        m_currentState = CharacterState.start;
         SetCharacterState(m_currentState);
         idle = true;
     }
@@ -52,20 +53,22 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Move();
-        Filp();
+        if (m_currentState != CharacterState.start)
+        {
+            Move();
+            Filp();
+        }
+
         Jump();
-        //Attack();
         CheckGround();        //检查地板碰撞
         ChangeVar();          //改变变量
         SetAnimationByVar();  //通过变量播放动画
-        //OneGamePlatformCheck();
     }
 
     //检测是否是地面
     void CheckGround()
     {
-        m_IsGround = m_MyFeet.IsTouchingLayers(LayerMask.GetMask("Ground"))||
+        m_IsGround = m_MyFeet.IsTouchingLayers(LayerMask.GetMask("Ground")) ||
                       m_MyFeet.IsTouchingLayers(LayerMask.GetMask("OneWayPlatform"));
     }
 
@@ -84,28 +87,7 @@ public class PlayerController : MonoBehaviour
 
     private void AnimationEntry_Complete(Spine.TrackEntry trackEntry)
     {
-        //if (m_currentState == CharacterState.attack)
-        //{
-        //    attack = false;
-        //    if (jump)
-        //    {
-        //        attack = false;
-        //        SetCharacterState(CharacterState.jump);
-        //    }
-        //    else if (fall)
-        //    {
-        //        //SetCharacterState(CharacterState.fall);
-        //        m_currentState = CharacterState.fall;
-        //    }
-        //    else if (run)
-        //    {
-        //        SetCharacterState(CharacterState.run);
-        //    }
-        //    else if (idle)
-        //    {
-        //        SetCharacterState(CharacterState.idle);
-        //    }
-        //}
+
     }
 
     //设置动画状态
@@ -116,17 +98,30 @@ public class PlayerController : MonoBehaviour
             case CharacterState.idle:
                 SetAnimation(m_aniReference[0], true, 1);
                 break;
-            case CharacterState.run:
-                SetAnimation(m_aniReference[1], true, 1.5f);
+            case CharacterState.start:
+                //SetAnimation(m_aniReference[1], false, 1);
+                //先滚后落地
+                EnterGame();
                 break;
             case CharacterState.jump:
-                SetAnimation(m_aniReference[2], false, 1);
+                SetAnimation(m_aniReference[1], false, 1);
                 break;
-            //case CharacterState.attack:
-            //    SetAnimation(m_aniReference[3], false, 3);
-            //    break;
-            case CharacterState.dead:
+            case CharacterState.highjump:
+                if (m_currentState != CharacterState.start)
+                {
+                    m_pRoll.enabled = true;
+                }
+                SetAnimation(m_aniReference[2], true, 1);
+                break;
+            case CharacterState.fly:
+                SetAnimation(m_aniReference[3], true, 1);
+                break;
+            case CharacterState.fall:
+                m_pRoll.enabled = false;
                 SetAnimation(m_aniReference[4], false, 1);
+                break;
+            case CharacterState.end:
+                SetAnimation(m_aniReference[5], false, 1);
                 break;
         }
 
@@ -150,14 +145,25 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    //进入游戏
+    void EnterGame()
+    {
+        //从左中上转到中间
+        m_MyFeet.enabled = false;
+
+        m_rigidbody2D.velocity = new Vector2(5, m_rigidbody2D.velocity.y);
+
+        SetAnimation(m_aniReference[2], true, 1);
+    }
+
     //移动变量
     void Move()
     {
-        m_fMovment = Input.GetAxis("Horizontal");
+        m_fMovments = Input.GetAxis("Horizontal");
         Vector3 Pos = Camera.main.WorldToScreenPoint(transform.position);
         Vector3 mousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Pos.z);
         //Debug.Log(mousePos);
-        m_rigidbody2D.velocity = new Vector2((Input.mousePosition.x - 320) * m_fMoveSpeed / 200, m_rigidbody2D.velocity.y);
+        m_rigidbody2D.velocity = new Vector2((Input.mousePosition.x - 320) * m_fMoveSpeeds / 200, m_rigidbody2D.velocity.y);
         if (transform.position.x < -6)
         {
             m_rigidbody2D.velocity = new Vector2(0, m_rigidbody2D.velocity.y);
@@ -168,7 +174,7 @@ public class PlayerController : MonoBehaviour
             m_rigidbody2D.velocity = new Vector2(0, m_rigidbody2D.velocity.y);
             transform.position = new Vector2(7, transform.position.y);
         }
-        if (m_fMovment != 0)
+        if (m_fMovments != 0)
         {
             run = true;
         }
@@ -178,34 +184,15 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    //单面石块
-    //void OneGamePlatformCheck()
-    //{
-    //    float moveY = Input.GetAxis("Vertical");
-    //    if (isOneWayPlatform && moveY < -0.1)
-    //    {
-    //        gameObject.layer = LayerMask.NameToLayer("OneWayPlatform");
-    //    }
-    //}
-
     //跳跃
     void Jump()
     {
-        if (m_IsGround && Input.GetButtonDown("Jump"))
+        if (m_IsGround && canJump)
         {
             jump = true;
-            m_rigidbody2D.velocity = new Vector2(m_rigidbody2D.velocity.x, m_fJumpSpeed);
+            m_rigidbody2D.velocity = new Vector2(m_rigidbody2D.velocity.x, m_fJumpSpeeds);
         }
     }
-
-    //void Attack()
-    //{
-    //    if (Input.GetButtonDown("Attack"))
-    //    {
-    //        attack = true;
-    //        GiveAttack = true;
-    //    }
-    //}
 
     void ChangeVar()
     {
@@ -216,80 +203,83 @@ public class PlayerController : MonoBehaviour
             if (m_rigidbody2D.velocity.y < 0.0f)
             {
                 jump = false;
-                fall = true;
+                fly = true;
             }
         }
         else if (m_IsGround)
         {
-            idle = true;
-            fall = false;
-        }
-        //if (jump)
-        //{
-        //    if (m_rigidbody2D.velocity.y < 0.0f)
-        //    {
-        //        jump = false;
-        //        fall = true;
-        //    }
-        //}
-        //else if (m_IsGround)
-        //{
-        //    idle = true;
-        //    fall = false;
-        //}
+            m_MyFeet.enabled = true;
+            transform.localPosition += new Vector3(0, 4, 0);
+            fall = true;
+            fly = false;
 
+            //开启延时，延时后进行跳跃
+            StartCoroutine(FallThenJump());
+        }
+
+        if (transform.localPosition.y < -13)
+        {
+            m_MyFeet.enabled = true;
+            transform.localPosition += new Vector3(0, 4, 0);
+            SetCharacterState(CharacterState.fall);
+        }
     }
+
+    IEnumerator FallThenJump()
+    {
+        yield return new WaitForSeconds(m_fFallThenJumpTime);
+        //开始进行跳跃
+        jump = true;
+        fall = false;
+        canJump = true;
+    }
+
     void SetAnimationByVar()
     {
         switch (m_currentState)
         {
+            case CharacterState.start:
+                if (idle && !start)
+                {
+                    SetCharacterState(CharacterState.idle);
+                }
+                break;
             case CharacterState.idle:
-                //if (attack)
-                //{
-                //    SetCharacterState(CharacterState.attack);
-                //}
                 if (jump)
                 {
                     SetCharacterState(CharacterState.jump);
                 }
-                else if (run)
+                if (end)
                 {
-                    SetCharacterState(CharacterState.run);
+                    SetCharacterState(CharacterState.end);
                 }
                 break;
-            case CharacterState.run:
-                //if (attack)
-                //{
-                //    SetCharacterState(CharacterState.attack);
-                //}
-                if (!run)
+            case CharacterState.jump:
+                if (!jump && fly)
+                {
+                    SetCharacterState(CharacterState.fly);
+                }
+                break;
+            case CharacterState.fly:
+                if (fly && fall)
+                {
+                    SetCharacterState(CharacterState.fall);
+                }
+                break;
+            case CharacterState.fall:
+                if (idle && !fall)
                 {
                     SetCharacterState(CharacterState.idle);
                 }
-                else if (jump)
+                else if (jump && !fall)
                 {
                     SetCharacterState(CharacterState.jump);
                 }
                 break;
-            case CharacterState.jump:
-                //if (attack)
-                //{
-                //    SetCharacterState(CharacterState.attack);
-                //}
-                if (!jump && fall)
+            case CharacterState.end:
+                if (idle && !end)
                 {
-                    //SetCharacterState(CharacterState.fall);
-                    m_currentState = CharacterState.fall;
-                }
-                break;
-            case CharacterState.fall:
-                //if (attack)
-                //{
-                //    SetCharacterState(CharacterState.attack);
-                //}
-                if (idle && !fall)
-                {
-                    SetCharacterState(CharacterState.idle);
+                    SetCharacterState(CharacterState.end);
                 }
                 break;
         }

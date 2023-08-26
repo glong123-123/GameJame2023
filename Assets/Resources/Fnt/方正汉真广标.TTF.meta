@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 790fee20b0c246e498194713e7c88b09
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - FZHanZhenGuangBiaoS-GB
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 68a1c1d55999fd04f9c274a78de28c82, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
