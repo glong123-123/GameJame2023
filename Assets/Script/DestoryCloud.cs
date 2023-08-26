@@ -8,6 +8,7 @@ public class DestoryCloud : MonoBehaviour
 
     private BoxCollider2D boxCollider2D;
     public GameObject player;
+    [SerializeField] ParticleSystem cloudVfx;
     void Start()
     {
         boxCollider2D = GetComponent<BoxCollider2D>();
@@ -28,6 +29,7 @@ public class DestoryCloud : MonoBehaviour
             player.GetComponent<PlayerController>().m_bTouchCloud = true;
             GetComponent<Renderer>().enabled = false;
             StartCoroutine(DestroyItSelf());
+            cloudVfx.Play();
         }
     }
     IEnumerator DestroyItSelf()
